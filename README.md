@@ -45,19 +45,17 @@ Both patients and doctors can maintain a history of consultations.
 ## 4. Technology Stack
 
 Backend:
-* Java, Spring Boot (JPA, MVC, AOP)
+* Java, Spring Boot (JPA, MVC)
 * Spring Security (for authentication)
-* Spring Data JPA (for database interaction)
 
 Database:
-* MySQL/PostgreSQL
-* Frontend (optional):
-* HTML/CSS, JavaScript (for UI)
+* MySQL
 
-Cloud (optional):
-* AWS or GCP for hosting
-* Payment Gateway:
-* Stripe, Razorpay, or PayPal
+Cloud:
+* AWS for hosting
+
+Payment Gateway:
+* Stripe, Razorpay
 
 Version Control:
 * GitHub (for code management)
