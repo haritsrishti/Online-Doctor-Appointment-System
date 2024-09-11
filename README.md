@@ -100,81 +100,81 @@ The High-Level Design provides an overview of the application's major components
 The Low-Level Design includes the detailed structure of the classes, methods, and modules that will be implemented.
 
 ### Entities and Relationships:
-#### Doctor:
+## 1. User Table (Common table for all users - Admin, Doctor, and Patient)
 
-* doctor_id: Integer (Primary Key)
-* name: String
-* specialty: String
-* experience: Integer
-* maxAppointments: Integer (Maximum appointments allowed, default 30)
+User (
+
+  user_id          INT PRIMARY KEY AUTO_INCREMENT,
   
-#### Patient:
-
-* patient_id: Integer (Primary Key)
-* name: String
-* email: String
-* phone: String
+  name             VARCHAR(100) NOT NULL,
   
-#### Appointment:
-
-* appointment_id: Integer (Primary Key)
-* doctor_id: Foreign Key (refers to Doctor)
-* patient_id: Foreign Key (refers to Patient)
-* date: Timestamp
-* status: String (Scheduled, Cancelled, etc.)
-
-#### Payment:
-
-* payment_id: Integer (Primary Key)
-* appointment_id: Foreign Key (refers to Appointment)
-* amount: Double
-* status: String (Paid, Failed)
-
-## 8. Database Design
-### Tables
-### Doctor Table:
-
-CREATE TABLE Doctor (
-
-  doctor_id INT AUTO_INCREMENT PRIMARY KEY,
+  email            VARCHAR(100) UNIQUE NOT NULL,
   
-  name VARCHAR(50),
+  password         VARCHAR(255) NOT NULL,    -- Password should be hashed
   
-  specialty VARCHAR(100),
+  role             ENUM('ADMIN', 'DOCTOR', 'PATIENT') NOT NULL,
   
-  experience INT,
+  phone            VARCHAR(15),
   
-  max_appointments INT DEFAULT 30
+  created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
   
 );
 
-### Patient Table:
+## 2. Doctor Table
 
-CREATE TABLE Patient (
+Doctor (
 
-  patient_id INT AUTO_INCREMENT PRIMARY KEY,
+  doctor_id        INT PRIMARY KEY,        -- Foreign Key to User (user_id)
   
-  name VARCHAR(50),
+  specialty        VARCHAR(100) NOT NULL,
   
-  email VARCHAR(50),
+  experience       INT NOT NULL,
   
-  phone VARCHAR(15)
+  max_appointments INT DEFAULT 30,         -- Max 30 appointments allowed per doctor
+  
+  status           ENUM('PENDING', 'APPROVED', 'REJECTED') DEFAULT 'PENDING',
+  
+  license_number   VARCHAR(100),           -- License details for admin to verify
+  
+  FOREIGN KEY (doctor_id) REFERENCES User(user_id) ON DELETE CASCADE
   
 );
 
-### Appointment Table:
+## 3. Patient Table
 
-CREATE TABLE Appointment (
+Patient (
 
-  appointment_id INT AUTO_INCREMENT PRIMARY KEY,
+  patient_id       INT PRIMARY KEY,        -- Foreign Key to User (user_id)
   
-  doctor_id INT,
+  address          VARCHAR(255),
   
-  patient_id INT,
+  date_of_birth    DATE,
   
-  date TIMESTAMP,
+  emergency_contact VARCHAR(15),
   
-  status VARCHAR(20),
+  FOREIGN KEY (patient_id) REFERENCES User(user_id) ON DELETE CASCADE
+  
+);
+
+## 4. Appointment Table
+
+Appointment (
+
+  appointment_id   INT PRIMARY KEY AUTO_INCREMENT,
+  
+  doctor_id        INT NOT NULL,           -- Foreign Key to Doctor (doctor_id)
+  
+  patient_id       INT NOT NULL,           -- Foreign Key to Patient (patient_id)
+  
+  appointment_date TIMESTAMP NOT NULL,     -- Scheduled date of appointment
+  
+  status           ENUM('SCHEDULED', 'CANCELLED', 'COMPLETED') DEFAULT 'SCHEDULED',
+  
+  created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   
   FOREIGN KEY (doctor_id) REFERENCES Doctor(doctor_id),
   
@@ -182,19 +182,61 @@ CREATE TABLE Appointment (
   
 );
 
-### Payment Table:
+## 5. Payment Table
 
-CREATE TABLE Payment (
+Payment (
 
-  payment_id INT AUTO_INCREMENT PRIMARY KEY,
+  payment_id       INT PRIMARY KEY AUTO_INCREMENT,
   
-  appointment_id INT,
+  appointment_id   INT NOT NULL,           -- Foreign Key to Appointment (appointment_id)
   
-  amount DOUBLE,
+  amount           DOUBLE NOT NULL,
   
-  status VARCHAR(20),
+  status           ENUM('PAID', 'FAILED') DEFAULT 'PAID',
   
-  FOREIGN KEY (appointment_id) REFERENCES Appointment(appointment_id)
+  payment_date     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  FOREIGN KEY (appointment_id) REFERENCES Appointment(appointment_id) ON DELETE CASCADE
+  
+);
+
+## 6. Consultation History Table (Optional)
+
+This table stores the consultation notes between a doctor and patient for each appointment.
+
+Consultation_History (
+
+  history_id       INT PRIMARY KEY AUTO_INCREMENT,
+  
+  appointment_id   INT NOT NULL,           -- Foreign Key to Appointment (appointment_id)
+  
+  doctor_notes     TEXT,                   -- Doctor's consultation notes
+  
+  patient_notes    TEXT,                   -- Patient's feedback or symptoms
+  
+  consultation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  FOREIGN KEY (appointment_id) REFERENCES Appointment(appointment_id) ON DELETE CASCADE
+  
+);
+
+## 7. Notification Table
+
+To manage notifications when an appointment gets canceled or becomes available.
+
+Notification (
+
+  notification_id  INT PRIMARY KEY AUTO_INCREMENT,
+  
+  user_id          INT NOT NULL,           -- Foreign Key to User (user_id)
+  
+  message          VARCHAR(255) NOT NULL,  -- Message to be sent
+  
+  is_read          BOOLEAN DEFAULT FALSE,  -- If notification is read or not
+  
+  sent_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE
   
 );
 
